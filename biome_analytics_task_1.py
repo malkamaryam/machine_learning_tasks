@@ -65,32 +65,24 @@ age_encoded = ohe.fit_transform(df[["age"]])
 age_df = pd.DataFrame(age_encoded, columns=ohe.get_feature_names_out(["age"]))
 df = pd.concat([df.drop(columns=["age"]), age_df], axis=1)
 
-df["admission_type_id"] = df["admission_type_id"].replace(
-    {
-        1: "Emergency",
-        2: "Urgent",
-        7: "Trauma Center",
-        5: "Not Available",
-        6: "Not Available",
-        8: "Not Available",
-        3: "Elective",
-        4: "Newborn",
-    }
+# Drop newborn admissions directly using the code (4 = Newborn)
+before = len(df)
+df = df[df["admission_type_id"] != 4]
+print(f"Dropped {before - len(df)} newborn rows")
+
+encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+encoded_array = encoder.fit_transform(df[["admission_type_id"]])
+
+encoded_df = pd.DataFrame(
+    encoded_array,
+    columns=encoder.get_feature_names_out(["admission_type_id"]),
+    index=df.index,
 )
 
-# Dropping newborn admissions
-before = len(df)
-df = df[df["admission_type_id"] != "Newborn"]
-df["admission_type_id"].value_counts()
+df = pd.concat([df.drop(columns=["admission_type_id"]), encoded_df], axis=1)
+df.head()
 
-exclude_codes = [
-    11,
-    13,
-    14,
-    19,
-    20,
-    21,
-]  # expired or hospice -- confirmed against IDS_mapping.csv
+exclude_codes = [11, 13, 14, 19, 20, 21]  # expired or hospice
 before = len(df)
 df = df[~df["discharge_disposition_id"].isin(exclude_codes)]
 
@@ -158,11 +150,19 @@ def map_diag(code):
     return "Other"
 
 
-for c in ["diag_1", "diag_2", "diag_3"]:
-    df[c + "_group"] = df[c].apply(map_diag)
+diag_cols = ["diag_1", "diag_2", "diag_3"]
 
-df = df.drop(columns=["diag_1", "diag_2", "diag_3"])
-df["diag_1_group"].value_counts()
+if all(c in df.columns for c in diag_cols):
+    for c in diag_cols:
+        df[c + "_group"] = df[c].apply(map_diag)
+    df = df.drop(columns=diag_cols)
+    print(df["diag_1_group"].value_counts())
+elif "diag_1_group" in df.columns:
+    print("diag columns already grouped, skipping grouping step")
+    print(df["diag_1_group"].value_counts())
+else:
+    diag1_cols = [c for c in df.columns if c.startswith("diag_1_group_")]
+    print(df[diag1_cols].sum().sort_values(ascending=False))
 
 df["service_utilization"] = (
     df["number_outpatient"] + df["number_emergency"] + df["number_inpatient"]
@@ -171,16 +171,34 @@ df[
     ["number_outpatient", "number_emergency", "number_inpatient", "service_utilization"]
 ].describe()
 
-df["max_glu_serum"] = (
-    df["max_glu_serum"].map({"Norm": 1, ">200": 2, ">300": 3}).fillna(0)
-)
-df["A1Cresult"] = df["A1Cresult"].map({"Norm": 1, ">7": 2, ">8": 3}).fillna(0)
-print(df["max_glu_serum"].value_counts())
-print(df["A1Cresult"].value_counts())
+# Fill missing values with a label first, since these are NaN when the test wasn't done
+df["max_glu_serum"] = df["max_glu_serum"].fillna("None")
+df["A1Cresult"] = df["A1Cresult"].fillna("None")
 
-df["gender"] = df["gender"].map({"Female": 0, "Male": 1})
-df["change"] = df["change"].map({"No": 0, "Ch": 1})
-df["diabetesMed"] = df["diabetesMed"].map({"No": 0, "Yes": 1})
+cols = ["max_glu_serum", "A1Cresult"]
+
+encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+encoded_array = encoder.fit_transform(df[cols])
+
+encoded_df = pd.DataFrame(
+    encoded_array, columns=encoder.get_feature_names_out(cols), index=df.index
+)
+
+df = pd.concat([df.drop(columns=cols), encoded_df], axis=1)
+print([c for c in df.columns if "max_glu_serum" in c or "A1Cresult" in c])
+
+binary_cols = ["gender", "change", "diabetesMed"]
+
+encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore", drop="first")
+encoded_array = encoder.fit_transform(df[binary_cols])
+
+encoded_df = pd.DataFrame(
+    encoded_array, columns=encoder.get_feature_names_out(binary_cols), index=df.index
+)
+
+df = pd.concat([df.drop(columns=binary_cols), encoded_df], axis=1)
+print(encoded_df.columns.tolist())
+print(df[encoded_df.columns].sum())
 
 near_constant = [
     "examide",
@@ -211,11 +229,16 @@ drug_cols = [
     "insulin",
     "glyburide-metformin",
 ]
-ordinal_map = {"No": 0, "Down": 1, "Steady": 2, "Up": 3}
-for c in drug_cols:
-    df[c] = df[c].map(ordinal_map)
 
-print(df[drug_cols].describe().T[["mean", "std"]])
+encoder = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
+encoded_array = encoder.fit_transform(df[drug_cols])
+
+encoded_df = pd.DataFrame(
+    encoded_array, columns=encoder.get_feature_names_out(drug_cols), index=df.index
+)
+
+df = pd.concat([df.drop(columns=drug_cols), encoded_df], axis=1)
+print([c for c in df.columns if any(c.startswith(d + "_") for d in drug_cols)])
 
 df["readmitted_30"] = (df["readmitted"] == "<30").astype(int)
 print(df["readmitted_30"].value_counts())
@@ -277,9 +300,10 @@ res_num_df = (
 )
 res_num_df
 
-drop_weak = [
-    "race",
-    "gender",
+direct_drop_cols = ["race", "gender"]
+
+# Drug columns that were one-hot encoded in a previous step
+one_hot_encoded_drug_prefixes = [
     "tolazamide",
     "miglitol",
     "glipizide",
@@ -289,21 +313,23 @@ drop_weak = [
     "chlorpropamide",
 ]
 
-df_model = df.drop(columns=drop_weak)
+# Find all one-hot encoded versions of these drug columns in the DataFrame using a list comprehension
+cols_to_drop_from_ohe_drugs = [
+    col
+    for drug_col_prefix in one_hot_encoded_drug_prefixes
+    for col in df.columns
+    if col.startswith(f"{drug_col_prefix}_")
+]
 
-for col in [
-    "glimepiride",
-    "glyburide",
-    "pioglitazone",
-    "rosiglitazone",
-    "insulin",
-    "change",
-    "diabetesMed",
-]:
-    if col in df_model.columns:
-        df_model[col] = df_model[col].fillna(0)
+# Combine all columns to drop
+drop_weak_final = direct_drop_cols + cols_to_drop_from_ohe_drugs
 
-print("Dropped (negligible effect size, non-significant):", drop_weak)
+# Ensure only existing columns are attempted to be dropped for robustness
+drop_weak_final = [col for col in drop_weak_final if col in df.columns]
+
+df_model = df.drop(columns=drop_weak_final)
+
+print("Dropped (negligible effect size, non-significant):", drop_weak_final)
 print("Remaining shape:", df_model.shape)
 
 cat_cols_remaining = df_model.select_dtypes(include="object").columns.tolist()
@@ -513,7 +539,7 @@ plt.savefig("shap_xgb_summary.png", dpi=150, bbox_inches="tight")
 plt.show()
 print("Saved: shap_xgb_summary.png")
 
-# ── Waterfall plot: highest-risk patient ──
+# Waterfall plot: highest-risk patient
 # Find the patient the model is most confident will be readmitted
 proba_xgb = xgb_model.predict_proba(X_test)[:, 1]
 high_risk_idx = np.argmax(proba_xgb)  # index of patient with highest predicted risk
@@ -607,13 +633,13 @@ print("Saved: shap_comparison_all_models.png")
 print("\nTop 10 features by XGBoost SHAP importance:")
 print(compare_df[["XGBoost"]].sort_values("XGBoost", ascending=False).round(4))
 
-# ── Extract actual top 5 features from XGBoost SHAP for the report ──
+# Extract actual top 5 features from XGBoost SHAP
 top5_xgb = top_shap_features(shap_values_xgb, X_test.columns.tolist(), n=5)
 print("TOP 5 RISK FACTORS (XGBoost SHAP)")
 for rank, (feat, val) in enumerate(top5_xgb.items(), 1):
     print(f"  {rank}. {feat:40s}  mean|SHAP| = {val:.4f}")
 
-# ── Check direction of top features ──
+# Check direction of top features
 print("\nDIRECTION ANALYSIS (positive SHAP = increases readmission risk)")
 mean_shap = shap_values_xgb.mean(axis=0)
 mean_shap_s = pd.Series(mean_shap, index=X_test.columns)
