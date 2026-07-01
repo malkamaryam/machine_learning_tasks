@@ -1,4 +1,4 @@
-#Reusable helper functions for the diabetes readmission pipeline.
+# Reusable helper functions for the diabetes readmission pipeline.
 
 import pandas as pd
 import numpy as np
