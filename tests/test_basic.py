@@ -4,6 +4,7 @@ from biome_analytics.helpers import map_diag, map_admission_source
 
 # map_diag tests
 
+
 # Missing / non-numeric inputs
 def test_map_diag_nan_returns_missing():
     assert map_diag(None) == "Missing"
