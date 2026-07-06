@@ -1,49 +1,4 @@
-Machine Learning Tasks
-=======================
-
-A portfolio of two independent machine learning pipelines.
-
---------------------------------------------------------------------
-
-Task 1: Diabetes 30-Day Readmission Prediction
-------------------------------------------------
-
-A machine learning pipeline to predict whether a diabetic patient will be
-readmitted to the hospital within 30 days of discharge, using the UCI
-"Diabetes 130-US hospitals" dataset.
-
-**Overview**
-
-This project covers the full pipeline from raw clinical data to model
-explainability:
-
-- Data cleaning and missing value handling
-- Feature engineering (diagnosis grouping by ICD-9 category, admission/discharge
-  recoding, drug dosage encoding)
-- One-hot and ordinal encoding of categorical clinical features
-- Feature selection using chi-square and point-biserial correlation tests
-- Model training and comparison: Logistic Regression, Random Forest, and XGBoost
-- Model explainability using SHAP (summary plots, waterfall plots, feature
-  importance comparison across models)
-
-**Installation & Usage**
-
-.. code-block:: bash
-
-    git clone https://github.com/malkamaryam/machine_learning_tasks.git
-    cd machine_learning_tasks
-    pip install -r requirements.txt
-
-Place ``diabetic_data.csv`` and ``IDS_mapping.csv`` in ``data/`` before running:
-
-.. code-block:: bash
-
-    python biome_analytics/core.py
-
---------------------------------------------------------------------
-
 Task 2: Hospital Value-Performance Benchmark
------------------------------------------------
 
 A quality-vs-cost benchmarking pipeline for U.S. hospitals, using CMS's
 public Provider Data Catalog datasets (Hospital General Information, HCAHPS
