@@ -46,7 +46,9 @@ for new_col, (better_col, worse_col) in category_pairs.items():
     raw[worse_col] = pd.to_numeric(raw[worse_col], errors="coerce")
     raw[new_col] = raw[better_col] - raw[worse_col]
 
-df = df.merge(raw[["Facility ID"] + list(category_pairs.keys())], on="Facility ID", how="left")
+df = df.merge(
+    raw[["Facility ID"] + list(category_pairs.keys())], on="Facility ID", how="left"
+)
 
 input_features = [
     "quality_patient_exp",
@@ -61,10 +63,18 @@ target = "quality_overall"
 
 model_df = df.dropna(subset=[target]).copy()
 
-fill_cols = ["quality_patient_exp", "readmission_rate_avg", "cost_value",
-             "MORT_net", "Safety_net", "READM_net"]
+fill_cols = [
+    "quality_patient_exp",
+    "readmission_rate_avg",
+    "cost_value",
+    "MORT_net",
+    "Safety_net",
+    "READM_net",
+]
 for col in fill_cols:
-    model_df[col] = model_df.groupby("peer_group")[col].transform(lambda x: x.fillna(x.mean()))
+    model_df[col] = model_df.groupby("peer_group")[col].transform(
+        lambda x: x.fillna(x.mean())
+    )
 for col in fill_cols:
     model_df[col] = model_df[col].fillna(model_df[col].mean())
 
@@ -73,7 +83,9 @@ y = model_df[target]
 
 print(f"Training on {len(model_df)} hospitals with a known official rating.\n")
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
 
 # ---------------------------------------------------------------
 # Gradient Boosting settings:
@@ -96,7 +108,9 @@ r2 = r2_score(y_test, predictions)
 print(f"Mean Absolute Error: {mae:.3f} stars")
 print(f"R-squared: {r2:.3f}")
 
-importance = pd.Series(model.feature_importances_, index=input_features).sort_values(ascending=False)
+importance = pd.Series(model.feature_importances_, index=input_features).sort_values(
+    ascending=False
+)
 print("\nWhich features mattered most to the model's predictions:")
 print(importance)
 
@@ -104,7 +118,9 @@ joblib.dump(model, folder + r"\baseline_model_v3.pkl")
 
 df_scored = df.copy()
 for col in fill_cols:
-    df_scored[col] = df_scored.groupby("peer_group")[col].transform(lambda x: x.fillna(x.mean()))
+    df_scored[col] = df_scored.groupby("peer_group")[col].transform(
+        lambda x: x.fillna(x.mean())
+    )
     df_scored[col] = df_scored[col].fillna(df_scored[col].mean())
 
 scorable = df_scored.dropna(subset=["peer_group"]).copy()

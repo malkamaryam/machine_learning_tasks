@@ -16,10 +16,20 @@ folder = r"C:\Users\malka\OneDrive\Desktop\Hospital project"
 # 10001. This keeps the ID consistent across all 4 files.
 id_as_text = {"Facility ID": str}
 
-general_info = pd.read_csv(folder + r"\Hospital_General_Information.csv", dtype=id_as_text)
-hcahps       = pd.read_csv(folder + r"\HCAHPS-Hospital.csv", dtype=id_as_text, low_memory=False)
-readmissions = pd.read_csv(folder + r"\Unplanned_Hospital_Visits-Hospital.csv", dtype=id_as_text, low_memory=False)
-spending     = pd.read_csv(folder + r"\HOSPITAL_QUARTERLY_MSPB_6_DECIMALS.csv", dtype=id_as_text)
+general_info = pd.read_csv(
+    folder + r"\Hospital_General_Information.csv", dtype=id_as_text
+)
+hcahps = pd.read_csv(
+    folder + r"\HCAHPS-Hospital.csv", dtype=id_as_text, low_memory=False
+)
+readmissions = pd.read_csv(
+    folder + r"\Unplanned_Hospital_Visits-Hospital.csv",
+    dtype=id_as_text,
+    low_memory=False,
+)
+spending = pd.read_csv(
+    folder + r"\HOSPITAL_QUARTERLY_MSPB_6_DECIMALS.csv", dtype=id_as_text
+)
 
 # STEP 3: Print how many rows each file has, just so we can see
 # everything loaded correctly before we do anything else.
@@ -48,7 +58,11 @@ print("Spending rows:", len(spending))
 # We combine them into a single "hcahps_value" column before pivoting,
 # so every measure type (including star ratings) gets captured.
 
-value_cols = ["HCAHPS Answer Percent", "HCAHPS Linear Mean Value", "Patient Survey Star Rating"]
+value_cols = [
+    "HCAHPS Answer Percent",
+    "HCAHPS Linear Mean Value",
+    "Patient Survey Star Rating",
+]
 for col in value_cols:
     hcahps[col] = hcahps[col].replace(["Not Applicable", "Not Available"], pd.NA)
     hcahps[col] = pd.to_numeric(hcahps[col], errors="coerce")
@@ -63,14 +77,11 @@ hcahps_wide = hcahps.pivot_table(
     index="Facility ID",
     columns="HCAHPS Measure ID",
     values="hcahps_value",
-    aggfunc="first"
+    aggfunc="first",
 ).reset_index()
 
 readmissions_wide = readmissions.pivot_table(
-    index="Facility ID",
-    columns="Measure ID",
-    values="Score",
-    aggfunc="first"
+    index="Facility ID", columns="Measure ID", values="Score", aggfunc="first"
 ).reset_index()
 
 print("HCAHPS rows after pivot (should be ~5432):", len(hcahps_wide))

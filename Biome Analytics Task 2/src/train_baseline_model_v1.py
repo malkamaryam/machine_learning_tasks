@@ -109,7 +109,9 @@ print(f"R-squared: {r2:.3f}")
 # at explainability -- Stage 7 will go deeper with SHAP values, but
 # this gives us an immediate, easy-to-read ranking.
 # ---------------------------------------------------------------
-importance = pd.Series(model.feature_importances_, index=input_features).sort_values(ascending=False)
+importance = pd.Series(model.feature_importances_, index=input_features).sort_values(
+    ascending=False
+)
 print("\nWhich features mattered most to the model's predictions:")
 print(importance)
 

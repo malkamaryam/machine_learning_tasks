@@ -37,8 +37,12 @@ combined = combined.replace(missing_labels, pd.NA)
 # any "Not Applicable" text mixed in)
 # ---------------------------------------------------------------
 readmission_cols = [
-    "READM_30_AMI", "READM_30_CABG", "READM_30_COPD",
-    "READM_30_HF", "READM_30_HIP_KNEE", "READM_30_PN",
+    "READM_30_AMI",
+    "READM_30_CABG",
+    "READM_30_COPD",
+    "READM_30_HF",
+    "READM_30_HIP_KNEE",
+    "READM_30_PN",
 ]
 numeric_cols = readmission_cols + ["Value", "Hospital overall rating", "H_STAR_RATING"]
 
@@ -70,8 +74,10 @@ combined["cost_value"] = combined["Value"]
 # same unit: "how many standard deviations from average is this hospital".
 # ---------------------------------------------------------------
 
+
 def zscore(series):
     return (series - series.mean()) / series.std()
+
 
 combined["z_quality_overall"] = zscore(combined["quality_overall"])
 combined["z_quality_patient_exp"] = zscore(combined["quality_patient_exp"])
@@ -96,6 +102,7 @@ quality_z_cols = ["z_quality_overall", "z_quality_patient_exp", "z_readmission"]
 combined["quality_component"] = combined[quality_z_cols].mean(axis=1, skipna=True)
 combined["cost_component"] = combined["z_cost"]
 
+
 # BUG FIX: a plain 0.5*quality + 0.5*cost breaks to NaN if EITHER side
 # is missing, even when the other side has good data. Fixed with a
 # weighted average that skips missing components and renormalizes the
@@ -109,6 +116,7 @@ def weighted_score(row):
     total_weight = sum(weights[k] for k in available)
     return sum(row[k] * weights[k] for k in available) / total_weight
 
+
 combined["value_score"] = combined.apply(weighted_score, axis=1)
 combined["value_score"] = pd.to_numeric(combined["value_score"], errors="coerce")
 
@@ -117,10 +125,22 @@ combined["value_score"] = pd.to_numeric(combined["value_score"], errors="coerce"
 # for scoring, clustering, and the dashboard later.
 # ---------------------------------------------------------------
 feature_cols = [
-    "Facility ID", "Facility Name", "State", "Hospital Type", "Hospital Ownership",
-    "quality_overall", "quality_patient_exp", "readmission_rate_avg", "cost_value",
-    "z_quality_overall", "z_quality_patient_exp", "z_readmission", "z_cost",
-    "quality_component", "cost_component", "value_score",
+    "Facility ID",
+    "Facility Name",
+    "State",
+    "Hospital Type",
+    "Hospital Ownership",
+    "quality_overall",
+    "quality_patient_exp",
+    "readmission_rate_avg",
+    "cost_value",
+    "z_quality_overall",
+    "z_quality_patient_exp",
+    "z_readmission",
+    "z_cost",
+    "quality_component",
+    "cost_component",
+    "value_score",
 ]
 features = combined[feature_cols]
 features.to_csv(folder + r"\hospital_features.csv", index=False)

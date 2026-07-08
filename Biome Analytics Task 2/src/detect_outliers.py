@@ -24,9 +24,12 @@ no other code needs to change.
 import pandas as pd
 
 folder = r"C:\Users\malka\OneDrive\Desktop\Hospital project"
-merged = pd.read_csv(folder + r"\hospital_features_with_peers.csv", dtype={"Facility ID": str})
+merged = pd.read_csv(
+    folder + r"\hospital_features_with_peers.csv", dtype={"Facility ID": str}
+)
 
 OUTLIER_THRESHOLD = 2.0  # standard deviations from peer-group average
+
 
 # ---------------------------------------------------------------
 # STEP 1: Classify each hospital based on value_score_peer.
@@ -40,6 +43,7 @@ def classify(score):
         return "Strong negative outlier"
     else:
         return "Typical for peer group"
+
 
 merged["outlier_status"] = merged["value_score_peer"].apply(classify)
 
@@ -56,8 +60,11 @@ driver_cols = {
     "z_cost_peer": "Medicare spending (cost)",
 }
 
+
 def find_biggest_driver(row):
-    values = {label: row[col] for col, label in driver_cols.items() if pd.notna(row[col])}
+    values = {
+        label: row[col] for col, label in driver_cols.items() if pd.notna(row[col])
+    }
     if not values:
         return "Insufficient data", None
     # the driver with the LOWEST (most negative) z-score is the biggest drag
@@ -65,17 +72,22 @@ def find_biggest_driver(row):
     worst_value = values[worst_metric]
     return worst_metric, round(worst_value, 2)
 
+
 merged[["biggest_drag_metric", "biggest_drag_value"]] = merged.apply(
     lambda row: pd.Series(find_biggest_driver(row)), axis=1
 )
 
+
 def find_biggest_strength(row):
-    values = {label: row[col] for col, label in driver_cols.items() if pd.notna(row[col])}
+    values = {
+        label: row[col] for col, label in driver_cols.items() if pd.notna(row[col])
+    }
     if not values:
         return "Insufficient data", None
     best_metric = max(values, key=values.get)
     best_value = values[best_metric]
     return best_metric, round(best_value, 2)
+
 
 merged[["biggest_strength_metric", "biggest_strength_value"]] = merged.apply(
     lambda row: pd.Series(find_biggest_strength(row)), axis=1
@@ -95,5 +107,15 @@ print(merged.groupby("peer_group_label")["outlier_status"].value_counts())
 
 print("\nExample strong negative outliers (biggest improvement opportunities):")
 negative = merged[merged["outlier_status"] == "Strong negative outlier"]
-print(negative[["Facility Name", "State", "peer_group_label", "value_score_peer",
-                 "biggest_drag_metric", "biggest_drag_value"]].head(10))
+print(
+    negative[
+        [
+            "Facility Name",
+            "State",
+            "peer_group_label",
+            "value_score_peer",
+            "biggest_drag_metric",
+            "biggest_drag_value",
+        ]
+    ].head(10)
+)

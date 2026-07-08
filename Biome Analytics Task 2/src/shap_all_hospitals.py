@@ -21,7 +21,9 @@ import shap
 folder = r"C:\Users\malka\OneDrive\Desktop\Hospital project"
 
 model = joblib.load(folder + r"\baseline_model_v3.pkl")
-df = pd.read_csv(folder + r"\hospital_features_with_model_v3.csv", dtype={"Facility ID": str})
+df = pd.read_csv(
+    folder + r"\hospital_features_with_model_v3.csv", dtype={"Facility ID": str}
+)
 
 input_features = [
     "quality_patient_exp",
@@ -63,15 +65,18 @@ scorable = pd.concat([scorable, shap_df], axis=1)
 # ---------------------------------------------------------------
 shap_cols = [f"shap_{f}" for f in input_features]
 
+
 def get_top_positive(row):
     values = row[shap_cols]
     best_col = values.idxmax()
     return best_col.replace("shap_", ""), round(values[best_col], 3)
 
+
 def get_top_negative(row):
     values = row[shap_cols]
     worst_col = values.idxmin()
     return worst_col.replace("shap_", ""), round(values[worst_col], 3)
+
 
 scorable[["shap_top_positive_feature", "shap_top_positive_value"]] = scorable.apply(
     lambda row: pd.Series(get_top_positive(row)), axis=1
@@ -87,17 +92,19 @@ scorable[["shap_top_negative_feature", "shap_top_negative_value"]] = scorable.ap
 # data throughout this whole project).
 # ---------------------------------------------------------------
 new_cols = shap_cols + [
-    "shap_top_positive_feature", "shap_top_positive_value",
-    "shap_top_negative_feature", "shap_top_negative_value",
+    "shap_top_positive_feature",
+    "shap_top_positive_value",
+    "shap_top_negative_feature",
+    "shap_top_negative_value",
 ]
-df_final = df.merge(
-    scorable[["Facility ID"] + new_cols], on="Facility ID", how="left"
-)
+df_final = df.merge(scorable[["Facility ID"] + new_cols], on="Facility ID", how="left")
 
 df_final.to_csv(folder + r"\hospital_features_with_shap.csv", index=False)
 
 print("Saved hospital_features_with_shap.csv\n")
 print("How often each feature is the TOP POSITIVE driver, across all hospitals:")
 print(df_final["shap_top_positive_feature"].value_counts())
-print("\nHow often each feature is the TOP NEGATIVE driver (biggest improvement opportunity), across all hospitals:")
+print(
+    "\nHow often each feature is the TOP NEGATIVE driver (biggest improvement opportunity), across all hospitals:"
+)
 print(df_final["shap_top_negative_feature"].value_counts())

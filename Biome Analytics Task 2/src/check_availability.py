@@ -11,9 +11,16 @@ usable data under CMS's current reporting rules.
 import pandas as pd
 
 folder = r"C:\Users\malka\OneDrive\Desktop\Hospital project"
-merged = pd.read_csv(folder + r"\hospital_features_final.csv", dtype={"Facility ID": str})
+merged = pd.read_csv(
+    folder + r"\hospital_features_final.csv", dtype={"Facility ID": str}
+)
 
-metric_cols = ["quality_overall", "quality_patient_exp", "readmission_rate_avg", "cost_value"]
+metric_cols = [
+    "quality_overall",
+    "quality_patient_exp",
+    "readmission_rate_avg",
+    "cost_value",
+]
 
 print("Data availability (% of hospitals WITH a real value) by peer group:\n")
 for pg_label in merged["peer_group_label"].dropna().unique():

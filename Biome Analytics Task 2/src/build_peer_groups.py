@@ -38,8 +38,9 @@ import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.cluster import KMeans
 import matplotlib
+
 matplotlib.use("Agg")  # save charts to file instead of popping up a window
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # noqa: E402
 
 folder = r"C:\Users\malka\OneDrive\Desktop\Hospital project"
 
@@ -126,13 +127,15 @@ cluster_data["peer_group"] = final_model.fit_predict(encoded_df)
 # Give clusters human-readable labels based on their most common
 # Hospital Type + Ownership combo, so "peer_group 3" isn't a mystery.
 cluster_data["peer_group_label"] = cluster_data["peer_group"].astype(str)
-label_lookup = (
-    cluster_data.groupby("peer_group")[["Hospital Type", "Hospital Ownership"]]
-    .agg(lambda x: x.mode().iloc[0] if not x.mode().empty else "Mixed")
-)
+label_lookup = cluster_data.groupby("peer_group")[
+    ["Hospital Type", "Hospital Ownership"]
+].agg(lambda x: x.mode().iloc[0] if not x.mode().empty else "Mixed")
 label_lookup["peer_group_label"] = (
-    "Cluster " + label_lookup.index.astype(str) + ": "
-    + label_lookup["Hospital Type"].astype(str) + " / "
+    "Cluster "
+    + label_lookup.index.astype(str)
+    + ": "
+    + label_lookup["Hospital Type"].astype(str)
+    + " / "
     + label_lookup["Hospital Ownership"].astype(str)
 )
 cluster_data = cluster_data.merge(
@@ -150,24 +153,40 @@ cluster_data = cluster_data.drop(columns=["peer_group_label_named"])
 # ---------------------------------------------------------------
 merged = features.merge(
     cluster_data[["Facility ID", "peer_group", "peer_group_label"]],
-    on="Facility ID", how="left"
+    on="Facility ID",
+    how="left",
 )
+
 
 def zscore(series):
     std = series.std()
     if std == 0 or pd.isna(std):
-        return series * 0  # avoid divide-by-zero if a group has 1 hospital or no variation
+        return (
+            series * 0
+        )  # avoid divide-by-zero if a group has 1 hospital or no variation
     return (series - series.mean()) / std
 
+
 # recompute peer-group-relative z-scores
-merged["z_quality_overall_peer"] = merged.groupby("peer_group")["quality_overall"].transform(zscore)
-merged["z_quality_patient_exp_peer"] = merged.groupby("peer_group")["quality_patient_exp"].transform(zscore)
-merged["z_readmission_peer"] = -merged.groupby("peer_group")["readmission_rate_avg"].transform(zscore)
+merged["z_quality_overall_peer"] = merged.groupby("peer_group")[
+    "quality_overall"
+].transform(zscore)
+merged["z_quality_patient_exp_peer"] = merged.groupby("peer_group")[
+    "quality_patient_exp"
+].transform(zscore)
+merged["z_readmission_peer"] = -merged.groupby("peer_group")[
+    "readmission_rate_avg"
+].transform(zscore)
 merged["z_cost_peer"] = -merged.groupby("peer_group")["cost_value"].transform(zscore)
 
-quality_peer_cols = ["z_quality_overall_peer", "z_quality_patient_exp_peer", "z_readmission_peer"]
+quality_peer_cols = [
+    "z_quality_overall_peer",
+    "z_quality_patient_exp_peer",
+    "z_readmission_peer",
+]
 merged["quality_component_peer"] = merged[quality_peer_cols].mean(axis=1, skipna=True)
 merged["cost_component_peer"] = merged["z_cost_peer"]
+
 
 # BUG FIX: previously we did 0.5*quality + 0.5*cost directly, which
 # breaks (returns NaN) if EITHER side is missing -- even if the other
@@ -185,6 +204,7 @@ def weighted_score(row):
         return pd.NA
     total_weight = sum(weights[k] for k in available)
     return sum(row[k] * weights[k] for k in available) / total_weight
+
 
 merged["value_score_peer"] = merged.apply(weighted_score, axis=1)
 merged["value_score_peer"] = pd.to_numeric(merged["value_score_peer"], errors="coerce")

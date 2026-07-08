@@ -60,7 +60,9 @@ for new_col, (better_col, worse_col) in category_pairs.items():
     # average" in this category. Positive = net good, negative = net bad.
     raw[new_col] = raw[better_col] - raw[worse_col]
 
-df = df.merge(raw[["Facility ID"] + list(category_pairs.keys())], on="Facility ID", how="left")
+df = df.merge(
+    raw[["Facility ID"] + list(category_pairs.keys())], on="Facility ID", how="left"
+)
 
 # ---------------------------------------------------------------
 # STEP 1: Pick our INPUT features (what the model looks at) and our
@@ -88,12 +90,26 @@ model_df = df.dropna(subset=[target]).copy()
 # as NaN) -- most ML models CANNOT handle missing values directly, so we
 # fill them here specifically for the model to work. The original
 # hospital_features_final.csv is untouched.
-for col in ["quality_patient_exp", "readmission_rate_avg", "cost_value", "MORT_net", "Safety_net", "READM_net"]:
+for col in [
+    "quality_patient_exp",
+    "readmission_rate_avg",
+    "cost_value",
+    "MORT_net",
+    "Safety_net",
+    "READM_net",
+]:
     model_df[col] = model_df.groupby("peer_group")[col].transform(
         lambda x: x.fillna(x.mean())
     )
 # if a whole peer group has no data for a column, fall back to overall mean
-for col in ["quality_patient_exp", "readmission_rate_avg", "cost_value", "MORT_net", "Safety_net", "READM_net"]:
+for col in [
+    "quality_patient_exp",
+    "readmission_rate_avg",
+    "cost_value",
+    "MORT_net",
+    "Safety_net",
+    "READM_net",
+]:
     model_df[col] = model_df[col].fillna(model_df[col].mean())
 
 X = model_df[input_features]
@@ -141,7 +157,9 @@ print(f"R-squared: {r2:.3f}")
 # at explainability -- Stage 7 will go deeper with SHAP values, but
 # this gives us an immediate, easy-to-read ranking.
 # ---------------------------------------------------------------
-importance = pd.Series(model.feature_importances_, index=input_features).sort_values(ascending=False)
+importance = pd.Series(model.feature_importances_, index=input_features).sort_values(
+    ascending=False
+)
 print("\nWhich features mattered most to the model's predictions:")
 print(importance)
 
@@ -154,7 +172,14 @@ joblib.dump(model, folder + r"\baseline_model_v2.pkl")
 
 df_scored = df.copy()
 # fill missing inputs the same way for the FULL dataset before scoring everyone
-for col in ["quality_patient_exp", "readmission_rate_avg", "cost_value", "MORT_net", "Safety_net", "READM_net"]:
+for col in [
+    "quality_patient_exp",
+    "readmission_rate_avg",
+    "cost_value",
+    "MORT_net",
+    "Safety_net",
+    "READM_net",
+]:
     df_scored[col] = df_scored.groupby("peer_group")[col].transform(
         lambda x: x.fillna(x.mean())
     )

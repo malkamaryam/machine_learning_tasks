@@ -21,6 +21,7 @@ folder = r"C:\Users\malka\OneDrive\Desktop\Hospital project"
 
 st.set_page_config(page_title="Hospital Value Dashboard", layout="wide")
 
+
 # ---------------------------------------------------------------
 # STEP 1: Load the data. @st.cache_data means "only reload this file
 # from disk if it actually changes" -- makes the app much faster,
@@ -28,13 +29,18 @@ st.set_page_config(page_title="Hospital Value Dashboard", layout="wide")
 # ---------------------------------------------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_csv(folder + r"\hospital_features_with_shap.csv", dtype={"Facility ID": str})
+    df = pd.read_csv(
+        folder + r"\hospital_features_with_shap.csv", dtype={"Facility ID": str}
+    )
     return df
+
 
 df = load_data()
 
 st.title("Hospital Value & Performance Dashboard")
-st.caption("Explore hospital quality-vs-cost value scores, peer comparisons, and improvement opportunities.")
+st.caption(
+    "Explore hospital quality-vs-cost value scores, peer comparisons, and improvement opportunities."
+)
 
 # ---------------------------------------------------------------
 # STEP 2: Sidebar filters. st.sidebar puts these controls in a
@@ -82,12 +88,35 @@ hospital_row = filtered_df[filtered_df["Facility Name"] == selected_hospital].il
 # st.columns lets us place several stat boxes side by side.
 # ---------------------------------------------------------------
 st.subheader(f"{selected_hospital}")
-st.write(f"**Peer group:** {hospital_row['peer_group_label']}  |  **State:** {hospital_row['State']}")
+st.write(
+    f"**Peer group:** {hospital_row['peer_group_label']}  |  **State:** {hospital_row['State']}"
+)
 
 col1, col2, col3 = st.columns(3)
-col1.metric("Value Score (vs peers)", f"{hospital_row['value_score_peer']:.2f}" if pd.notna(hospital_row['value_score_peer']) else "N/A")
-col2.metric("Outlier Status", hospital_row['outlier_status'] if pd.notna(hospital_row['outlier_status']) else "N/A")
-col3.metric("CMS Overall Rating", f"{hospital_row['quality_overall']:.0f} stars" if pd.notna(hospital_row['quality_overall']) else "N/A")
+col1.metric(
+    "Value Score (vs peers)",
+    (
+        f"{hospital_row['value_score_peer']:.2f}"
+        if pd.notna(hospital_row["value_score_peer"])
+        else "N/A"
+    ),
+)
+col2.metric(
+    "Outlier Status",
+    (
+        hospital_row["outlier_status"]
+        if pd.notna(hospital_row["outlier_status"])
+        else "N/A"
+    ),
+)
+col3.metric(
+    "CMS Overall Rating",
+    (
+        f"{hospital_row['quality_overall']:.0f} stars"
+        if pd.notna(hospital_row["quality_overall"])
+        else "N/A"
+    ),
+)
 
 # ---------------------------------------------------------------
 # STEP 5: SHAP breakdown chart -- shows exactly which metrics pushed
@@ -98,8 +127,13 @@ col3.metric("CMS Overall Rating", f"{hospital_row['quality_overall']:.0f} stars"
 st.subheader("Why did this hospital score this way?")
 
 shap_features = [
-    "quality_patient_exp", "readmission_rate_avg", "cost_value",
-    "peer_group", "MORT_net", "Safety_net", "READM_net",
+    "quality_patient_exp",
+    "readmission_rate_avg",
+    "cost_value",
+    "peer_group",
+    "MORT_net",
+    "Safety_net",
+    "READM_net",
 ]
 feature_labels = {
     "quality_patient_exp": "Patient Experience",
@@ -117,7 +151,9 @@ has_shap = all(pd.notna(hospital_row[c]) for c in shap_cols)
 if has_shap:
     shap_vals = [hospital_row[c] for c in shap_cols]
     labels = [feature_labels[f] for f in shap_features]
-    colors = ["#2E7D32" if v >= 0 else "#C62828" for v in shap_vals]  # green = helped, red = hurt
+    colors = [
+        "#2E7D32" if v >= 0 else "#C62828" for v in shap_vals
+    ]  # green = helped, red = hurt
 
     # sort so the biggest effects (positive or negative) appear at the top
     order = sorted(range(len(shap_vals)), key=lambda i: abs(shap_vals[i]))
@@ -125,22 +161,28 @@ if has_shap:
     labels_sorted = [labels[i] for i in order]
     colors_sorted = [colors[i] for i in order]
 
-    fig = go.Figure(go.Bar(
-        x=shap_vals_sorted,
-        y=labels_sorted,
-        orientation="h",
-        marker_color=colors_sorted,
-    ))
+    fig = go.Figure(
+        go.Bar(
+            x=shap_vals_sorted,
+            y=labels_sorted,
+            orientation="h",
+            marker_color=colors_sorted,
+        )
+    )
     fig.update_layout(
         xaxis_title="Impact on predicted rating (+ helps, - hurts)",
         height=350,
         margin=dict(l=10, r=10, t=30, b=10),
     )
     st.plotly_chart(fig, use_container_width=True)
-    st.caption("Green bars pushed this hospital's score UP. Red bars pulled it DOWN. "
-               "Longer bars = bigger impact for this specific hospital.")
+    st.caption(
+        "Green bars pushed this hospital's score UP. Red bars pulled it DOWN. "
+        "Longer bars = bigger impact for this specific hospital."
+    )
 else:
-    st.info("Not enough data available to generate a SHAP explanation for this hospital.")
+    st.info(
+        "Not enough data available to generate a SHAP explanation for this hospital."
+    )
 
 # ---------------------------------------------------------------
 # STEP 6: Radar chart -- compares this hospital's raw metrics
@@ -168,28 +210,34 @@ for label, col in radar_metrics.items():
 categories = list(radar_metrics.keys())
 
 fig2 = go.Figure()
-fig2.add_trace(go.Scatterpolar(
-    r=hospital_values + [hospital_values[0]],
-    theta=categories + [categories[0]],
-    fill="toself",
-    name=selected_hospital,
-))
-fig2.add_trace(go.Scatterpolar(
-    r=peer_avg_values + [peer_avg_values[0]],
-    theta=categories + [categories[0]],
-    fill="toself",
-    name="Peer Group Average",
-    opacity=0.5,
-))
+fig2.add_trace(
+    go.Scatterpolar(
+        r=hospital_values + [hospital_values[0]],
+        theta=categories + [categories[0]],
+        fill="toself",
+        name=selected_hospital,
+    )
+)
+fig2.add_trace(
+    go.Scatterpolar(
+        r=peer_avg_values + [peer_avg_values[0]],
+        theta=categories + [categories[0]],
+        fill="toself",
+        name="Peer Group Average",
+        opacity=0.5,
+    )
+)
 fig2.update_layout(
     polar=dict(radialaxis=dict(visible=True)),
     showlegend=True,
     height=450,
 )
 st.plotly_chart(fig2, use_container_width=True)
-st.caption("Note: Overall Rating and Patient Experience are on a 1-5 star scale. "
-           "Readmission Rate and Cost are shown as z-scores (standard deviations from "
-           "peer group average, already flipped so higher always means better).")
+st.caption(
+    "Note: Overall Rating and Patient Experience are on a 1-5 star scale. "
+    "Readmission Rate and Cost are shown as z-scores (standard deviations from "
+    "peer group average, already flipped so higher always means better)."
+)
 
 # ---------------------------------------------------------------
 # STEP 7: Table of the biggest outliers in the current filtered view
@@ -197,23 +245,34 @@ st.caption("Note: Overall Rating and Patient Experience are on a 1-5 star scale.
 # ---------------------------------------------------------------
 st.subheader("Biggest outliers in your current filter")
 
-outlier_table = filtered_df[filtered_df["outlier_status"].isin(
-    ["Strong positive outlier", "Strong negative outlier"]
-)].copy()
+outlier_table = filtered_df[
+    filtered_df["outlier_status"].isin(
+        ["Strong positive outlier", "Strong negative outlier"]
+    )
+].copy()
 
 if len(outlier_table) > 0:
     outlier_table = outlier_table.sort_values("value_score_peer")
-    display_cols = ["Facility Name", "State", "peer_group_label", "value_score_peer",
-                     "outlier_status", "shap_top_negative_feature", "shap_top_positive_feature"]
+    display_cols = [
+        "Facility Name",
+        "State",
+        "peer_group_label",
+        "value_score_peer",
+        "outlier_status",
+        "shap_top_negative_feature",
+        "shap_top_positive_feature",
+    ]
     st.dataframe(
-        outlier_table[display_cols].rename(columns={
-            "Facility Name": "Hospital",
-            "peer_group_label": "Peer Group",
-            "value_score_peer": "Value Score",
-            "outlier_status": "Status",
-            "shap_top_negative_feature": "Biggest Weakness",
-            "shap_top_positive_feature": "Biggest Strength",
-        }),
+        outlier_table[display_cols].rename(
+            columns={
+                "Facility Name": "Hospital",
+                "peer_group_label": "Peer Group",
+                "value_score_peer": "Value Score",
+                "outlier_status": "Status",
+                "shap_top_negative_feature": "Biggest Weakness",
+                "shap_top_positive_feature": "Biggest Strength",
+            }
+        ),
         use_container_width=True,
         hide_index=True,
     )
