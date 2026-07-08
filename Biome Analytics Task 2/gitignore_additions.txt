@@ -1,5 +1,0 @@
-# --- hospital_value_benchmark additions ---
-# Raw CMS CSV files and generated pipeline outputs (regenerable, not tracked)
-data/hospital_value_benchmark/*.csv
-data/hospital_value_benchmark/*.pkl
-data/hospital_value_benchmark/*.png
