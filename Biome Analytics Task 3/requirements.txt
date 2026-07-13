@@ -1,0 +1,11 @@
+numpy
+librosa
+soundfile
+torch
+torchaudio
+scikit-learn
+matplotlib
+speechbrain
+kagglehub
+pytest
+flake8
