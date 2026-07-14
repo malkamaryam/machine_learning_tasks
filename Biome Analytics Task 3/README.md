@@ -109,8 +109,4 @@ Then visit `http://127.0.0.1:5000` in your browser.
 ### Test data
 Sample voice recordings for manual testing are provided in `test_data/`,
 including genuine (same-speaker) and impostor (different-speaker) samples
-<<<<<<< HEAD
 used during development to validate registration and authentication behavior.
-=======
-used during development to validate registration and authentication behavior.
->>>>>>> ff9fa85c9a6926b86ce2ed68cef5b269af06266a
