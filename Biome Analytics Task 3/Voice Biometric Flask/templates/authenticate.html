@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Authenticate</h1>
+{% if error %}
+<div class="message error">{{ error }}</div>
+{% endif %}
+{% if result %}
+    {% if result.authenticated %}
+    <div class="message success">
+        ✅ Access Granted<br>
+        Confidence Score: {{ result.confidence }}<br>
+        Threshold Used: {{ result.threshold }}
+    </div>
+    {% else %}
+    <div class="message error">
+        ❌ Access Denied<br>
+        Confidence Score: {{ result.confidence }}<br>
+        Threshold Used: {{ result.threshold }}
+    </div>
+    {% endif %}
+{% endif %}
+{% if users %}
+<form method="POST" enctype="multipart/form-data">
+    <label for="username">Select your registered username:</label><br>
+    <select name="username" id="username" required>
+        {% for user in users %}
+        <option value="{{ user }}" {% if user == selected_user %}selected{% endif %}>{{ user }}</option>
+        {% endfor %}
+    </select><br><br>
+    <label for="voice_sample">Upload a voice sample to authenticate:</label><br>
+    <input type="file" name="voice_sample" id="voice_sample" accept=".wav,.mp3" required><br><br>
+    <button type="submit">Authenticate</button>
+</form>
+{% else %}
+<p>No users are registered yet. Please <a href="/register">register</a> first.</p>
+{% endif %}
+{% endblock %}

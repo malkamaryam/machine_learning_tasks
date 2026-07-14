@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero">
+    <span class="eyebrow">🎤 VOICE BIOMETRICS · PROOF OF CONCEPT</span>
+    <h1>AI Based Voice Biometric System</h1>
+    <p>
+        Identity verification powered by ECAPA-TDNN speaker embeddings,
+        register a voiceprint, then authenticate against it in real time.
+    </p>
+</div>
+<div class="stats">
+    <div class="stat">
+        <div class="stat-value">192-d</div>
+        <div class="stat-label">Embedding Size</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value">~2.3%</div>
+        <div class="stat-label">Equal Error Rate</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value">Cosine</div>
+        <div class="stat-label">Similarity Metric</div>
+    </div>
+</div>
+<div class="feature-cards">
+    <div class="feature-card">
+        <div class="icon">🎙️</div>
+        <h3>Register</h3>
+        <p>Enroll a new voice profile using one or more audio samples.</p>
+        <a href="/register">Register a user</a>
+    </div>
+    <div class="feature-card">
+        <div class="icon">🔐</div>
+        <h3>Authenticate</h3>
+        <p>Verify identity by comparing a sample against a stored profile.</p>
+        <a href="/authenticate">Authenticate</a>
+    </div>
+</div>
+{% endblock %}

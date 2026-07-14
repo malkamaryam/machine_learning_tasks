@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Voice Biometric Authentication</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav>
+        <span class="brand"><span class="brand-mark">🔊</span>VoiceAuth</span>
+        <a href="/">Home</a>
+        <a href="/register">Register</a>
+        <a href="/authenticate">Authenticate</a>
+    </nav>
+    <div class="content">
+        {% block content %}{% endblock %}
+    </div>
+    <footer>Voice Biometric Authentication System · ECAPA-TDNN Speaker Verification</footer>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Downloaded pretrained model (large, re-downloads automatically)
+pretrained_ecapa/
+
+# User data (voiceprints and uploaded audio)
+voiceprints.pkl
+uploads/*.wav
+uploads/*.mp3
+test_tone.wav
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+.vscode/

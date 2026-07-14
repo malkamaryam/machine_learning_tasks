@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Register a New User</h1>
+
+{% if message %}
+<div class="message {{ message_type }}">{{ message }}</div>
+{% endif %}
+
+<form method="POST" enctype="multipart/form-data">
+    <label for="username">Username:</label><br>
+    <input type="text" name="username" id="username" required><br><br>
+
+    <label for="voice_samples">Upload voice sample(s):</label><br>
+    <input type="file" name="voice_samples" id="voice_samples" accept=".wav,.mp3" multiple required><br><br>
+
+    <button type="submit">Register</button>
+</form>
+{% endblock %}
