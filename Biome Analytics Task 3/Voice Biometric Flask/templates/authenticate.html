@@ -20,17 +20,82 @@
     {% endif %}
 {% endif %}
 {% if users %}
-<form method="POST" enctype="multipart/form-data">
+<form method="POST" enctype="multipart/form-data" id="authForm">
     <label for="username">Select your registered username:</label><br>
     <select name="username" id="username" required>
         {% for user in users %}
         <option value="{{ user }}" {% if user == selected_user %}selected{% endif %}>{{ user }}</option>
         {% endfor %}
     </select><br><br>
-    <label for="voice_sample">Upload a voice sample to authenticate:</label><br>
-    <input type="file" name="voice_sample" id="voice_sample" accept=".wav,.mp3" required><br><br>
+
+    <p>Record a voice sample to authenticate:</p>
+    <button type="button" id="recordBtn">🎙️ Record</button>
+    <button type="button" id="stopBtn" disabled>⏹️ Stop</button>
+    <p id="recordingStatus">Not recording.</p>
+    <div id="audioPreviewContainer"></div>
+
+    <p style="margin-top:20px;">Or upload an existing file instead:</p>
+    <input type="file" name="voice_sample" id="voice_sample" accept=".wav,.mp3"><br><br>
+
     <button type="submit">Authenticate</button>
 </form>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let recordedFile = null;
+
+const recordBtn = document.getElementById("recordBtn");
+const stopBtn = document.getElementById("stopBtn");
+const statusText = document.getElementById("recordingStatus");
+const fileInput = document.getElementById("voice_sample");
+const previewContainer = document.getElementById("audioPreviewContainer");
+
+recordBtn.addEventListener("click", async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+
+    mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+        recordedFile = new File([audioBlob], "auth_sample.wav", { type: "audio/wav" });
+
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(recordedFile);
+        fileInput.files = dataTransfer.files;
+
+        previewContainer.innerHTML = "";
+        const audioURL = URL.createObjectURL(audioBlob);
+        const audioElem = document.createElement("audio");
+        audioElem.controls = true;
+        audioElem.src = audioURL;
+        previewContainer.appendChild(audioElem);
+
+        stream.getTracks().forEach(track => track.stop());
+    };
+
+    mediaRecorder.start();
+    statusText.textContent = "🔴 Recording... speak now!";
+    recordBtn.disabled = true;
+    stopBtn.disabled = false;
+});
+
+stopBtn.addEventListener("click", () => {
+    mediaRecorder.stop();
+    statusText.textContent = "Recording stopped.";
+    recordBtn.disabled = false;
+    stopBtn.disabled = true;
+});
+
+document.getElementById("authForm").addEventListener("submit", (e) => {
+    if (!recordedFile && fileInput.files.length === 0) {
+        e.preventDefault();
+        alert("Please record a sample, or upload a file.");
+    }
+});
+</script>
 {% else %}
 <p>No users are registered yet. Please <a href="/register">register</a> first.</p>
 {% endif %}

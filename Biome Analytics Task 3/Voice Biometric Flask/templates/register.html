@@ -1,19 +1,85 @@
 {% extends "base.html" %}
-
 {% block content %}
 <h1>Register a New User</h1>
-
 {% if message %}
 <div class="message {{ message_type }}">{{ message }}</div>
 {% endif %}
-
-<form method="POST" enctype="multipart/form-data">
+<form method="POST" enctype="multipart/form-data" id="registerForm">
     <label for="username">Username:</label><br>
     <input type="text" name="username" id="username" required><br><br>
 
-    <label for="voice_samples">Upload voice sample(s):</label><br>
-    <input type="file" name="voice_samples" id="voice_samples" accept=".wav,.mp3" multiple required><br><br>
+    <p>Record at least 3 samples (click Record, speak a full sentence, click Stop, repeat):</p>
+    <button type="button" id="recordBtn">Record</button>
+    <button type="button" id="stopBtn" disabled>Stop</button>
+    <p id="recordingStatus">Not recording.</p>
+    <p id="sampleCount">Samples recorded: 0</p>
+    <div id="audioPreviewContainer"></div>
+
+    <p style="margin-top:20px;">Or upload existing file(s) instead:</p>
+    <input type="file" name="voice_samples" id="voice_samples" accept=".wav,.mp3" multiple><br><br>
 
     <button type="submit">Register</button>
 </form>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+let recordedFiles = [];
+
+const recordBtn = document.getElementById("recordBtn");
+const stopBtn = document.getElementById("stopBtn");
+const statusText = document.getElementById("recordingStatus");
+const countText = document.getElementById("sampleCount");
+const fileInput = document.getElementById("voice_samples");
+const previewContainer = document.getElementById("audioPreviewContainer");
+
+recordBtn.addEventListener("click", async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = (e) => audioChunks.push(e.data);
+
+    mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+        const fileName = "sample_" + recordedFiles.length + ".wav";
+        const file = new File([audioBlob], fileName, { type: "audio/wav" });
+        recordedFiles.push(file);
+
+        const dataTransfer = new DataTransfer();
+        recordedFiles.forEach(f => dataTransfer.items.add(f));
+        fileInput.files = dataTransfer.files;
+
+        countText.textContent = "Samples recorded: " + recordedFiles.length;
+
+        const audioURL = URL.createObjectURL(audioBlob);
+        const audioElem = document.createElement("audio");
+        audioElem.controls = true;
+        audioElem.src = audioURL;
+        previewContainer.appendChild(audioElem);
+        previewContainer.appendChild(document.createElement("br"));
+
+        stream.getTracks().forEach(track => track.stop());
+    };
+
+    mediaRecorder.start();
+    statusText.textContent = "Recording... speak now!";
+    recordBtn.disabled = true;
+    stopBtn.disabled = false;
+});
+
+stopBtn.addEventListener("click", () => {
+    mediaRecorder.stop();
+    statusText.textContent = "Recording stopped.";
+    recordBtn.disabled = false;
+    stopBtn.disabled = true;
+});
+
+document.getElementById("registerForm").addEventListener("submit", (e) => {
+    if (recordedFiles.length === 0 && fileInput.files.length === 0) {
+        e.preventDefault();
+        alert("Please record at least one sample, or upload a file.");
+    }
+});
+</script>
 {% endblock %}
